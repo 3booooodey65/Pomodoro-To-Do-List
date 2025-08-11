@@ -506,7 +506,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function callGemini(prompt, buttonElement) {
     if (buttonElement) buttonElement.disabled = true;
 
-    const apiKey = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"; // Provided by environment
+    const apiKey = "AIzaSyAwR2RKbZmG4q0ZJB3vqtossMFc4UE2mQ0"; // Provided by environment
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
     const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
 
