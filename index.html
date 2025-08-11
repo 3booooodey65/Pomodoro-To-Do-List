@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة المهام الذكية | To-Do List with AI</title>
+
+    <link rel="icon" type="image/x-icon" class="fa-solid fa-check-double text-primary">
+    <!-- Bootstrap 5 CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" xintegrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    
+        <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-body-tertiary">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg bg-body-secondary sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+            
+                <i class=" fa-solid fa-check-double text-primary"></i>
+                قائمة المهام الذكية
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 align-items-center">
+                    <li class="nav-item me-3">
+                        <div class="color-picker-wrapper">
+                            <label for="primaryColorPicker" class="form-label mb-0 small">الرئيسي:</label>
+                            <input type="color" id="primaryColorPicker" value="#0d6efd">
+                        </div>
+                    </li>
+                    <li class="nav-item me-3">
+                        <div class="color-picker-wrapper">
+                            <label for="secondaryColorPicker" class="form-label mb-0 small">الثانوي:</label>
+                            <input type="color" id="secondaryColorPicker" value="#6c757d">
+                        </div>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-palette"></i>
+                            السمة
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="setTheme('light')"><i class="fas fa-sun"></i> فاتح</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="setTheme('dark')"><i class="fas fa-moon"></i> داكن</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container py-4">
+
+        <!-- Top Row: Quote and Pomodoro -->
+        <div class="row mb-4">
+            <!-- Quote Section -->
+            <div class="col-lg-7 mb-4 mb-lg-0">
+                <section class="quote-section shadow-sm h-100 d-flex flex-column justify-content-center text-center">
+                    <figure>
+                        <blockquote class="blockquote">
+                            <p id="quote-text">يتم الآن تحميل حكمة ملهمة...</p>
+                        </blockquote>
+                        <figcaption class="blockquote-footer" id="quote-author">
+                            ...
+                        </figcaption>
+                    </figure>
+                    <button class="btn btn-sm btn-outline-secondary align-self-center mt-3" id="gemini-quote-btn">
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                        ✨ طلب حكمة جديدة
+                    </button>
+                </section>
+            </div>
+
+            <!-- Pomodoro Timer Section -->
+            <div class="col-lg-5">
+                <section class="pomodoro-section shadow-sm h-100">
+                    <div class="d-flex flex-column justify-content-center align-items-center text-center h-100">
+                        <h4 class="h5 mb-3">مؤقت بومودورو</h4>
+                        <div class="btn-group mb-3" role="group">
+                            <button type="button" class="btn btn-outline-primary" id="pomodoro-mode-pomodoro">تركيز</button>
+                            <button type="button" class="btn btn-outline-primary" id="pomodoro-mode-short">راحة قصيرة</button>
+                            <button type="button" class="btn btn-outline-primary" id="pomodoro-mode-long">راحة طويلة</button>
+                        </div>
+                        <div id="pomodoro-timer" class="fw-bold my-3">25:00</div>
+                        <div>
+                            <button class="btn btn-primary btn-lg" id="pomodoro-start-pause">
+                                <i class="fas fa-play"></i> <span class="visually-hidden-sm-down">بدء</span>
+                            </button>
+                            <button class="btn btn-secondary btn-lg" id="pomodoro-reset">
+                                <i class="fas fa-sync-alt"></i> <span class="visually-hidden-sm-down">إعادة</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- Add Task Section -->
+        <section class="mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4 mb-3">إضافة مهمة جديدة</h2>
+                    <form id="task-form">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="task-title" class="form-label">عنوان المهمة</label>
+                                <input type="text" class="form-control" id="task-title" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="task-priority" class="form-label">الأولوية</label>
+                                <select id="task-priority" class="form-select">
+                                    <option value="low">منخفضة</option>
+                                    <option value="medium" selected>متوسطة</option>
+                                    <option value="high">عالية</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="task-desc" class="form-label">الوصف (اختياري)</label>
+                                <textarea class="form-control" id="task-desc" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="task-start" class="form-label">وقت البدء</label>
+                                <input type="datetime-local" class="form-control" id="task-start" required>
+                            </div>
+                            <div class="col-md-6 col-lg-4">
+                                <label for="task-end" class="form-label">وقت الانتهاء</label>
+                                <input type="datetime-local" class="form-control" id="task-end" required>
+                            </div>
+                            <div class="col-lg-4">
+                                <label for="task-reminder" class="form-label">تذكير قبل (دقائق)</label>
+                                <input type="number" class="form-control" id="task-reminder" min="1" placeholder="مثال: 15">
+                            </div>
+                        </div>
+                        <input type="hidden" id="task-id">
+                        <div class="d-grid gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus-circle"></i> <span id="form-button-text">إضافة المهمة</span>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="gemini-breakdown-btn" style="display: none;">
+                                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                ✨ تقسيم المهمة بالذكاء الاصطناعي
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filter and Sort Section -->
+        <section class="d-flex flex-wrap justify-content-between align-items-center mb-3 p-3 bg-body-secondary rounded shadow-sm">
+            <div class="btn-group mb-2 mb-md-0" role="group">
+                <input type="radio" class="btn-check" name="filter" id="filter-all" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="filter-all">الكل</label>
+
+                <input type="radio" class="btn-check" name="filter" id="filter-pending" autocomplete="off">
+                <label class="btn btn-outline-primary" for="filter-pending">قادمة</label>
+
+                <input type="radio" class="btn-check" name="filter" id="filter-in-progress" autocomplete="off">
+                <label class="btn btn-outline-primary" for="filter-in-progress">جارية</label>
+
+                <input type="radio" class="btn-check" name="filter" id="filter-completed" autocomplete="off">
+                <label class="btn btn-outline-primary" for="filter-completed">مكتملة</label>
+            </div>
+            <div>
+                <select class="form-select" id="sort-tasks">
+                    <option value="time-asc">فرز حسب: الأحدث أولاً</option>
+                    <option value="time-desc">الأقدم أولاً</option>
+                    <option value="priority">الأولوية</option>
+                </select>
+            </div>
+        </section>
+
+        <!-- Task List Section -->
+        <section id="task-list-container">
+            <!-- Tasks will be rendered here by JavaScript -->
+        </section>
+
+    </main>
+    
+    <!-- Toast container for notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="app-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <strong class="me-auto" id="toast-title"></strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toast-body"></div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">تأكيد الحذف</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            هل أنت متأكد من حذف هذه المهمة؟ لا يمكن التراجع عن هذا الإجراء.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">حذف</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
+    <script src="js/main.js">
+    </script>
+
+</body>
+</html>
