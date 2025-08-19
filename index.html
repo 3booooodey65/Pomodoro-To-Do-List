@@ -146,10 +146,15 @@
                             </div>
                         </div>
                         <input type="hidden" id="task-id">
-                        <div class="d-grid gap-2 mt-3">
-                            <button type="submit" class="btn btn-primary">
+                        <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+                            <button type="submit" class="btn btn-primary flex-grow-1">
                                 <i class="fas fa-plus-circle"></i> <span id="form-button-text">إضافة المهمة</span>
                             </button>
+                            <button type="button" class="btn btn-secondary flex-grow-1" id="cancel-edit-btn" style="display: none;">
+                                <i class="fas fa-times-circle"></i> <span>إلغاء التعديل</span>
+                            </button>
+                        </div>
+                        <div class="d-grid gap-2 mt-2">
                             <button type="button" class="btn btn-outline-primary" id="gemini-breakdown-btn" style="display: none;">
                                 <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
                                 ✨ تقسيم المهمة بالذكاء الاصطناعي
