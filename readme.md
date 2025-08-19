@@ -1,6 +1,5 @@
 # 📝 To-Do List & Pomodoro Timer
 
-![App Screenshot](https://i.imgur.com/8a1b7gM.png)
 
 A comprehensive web application for effective daily task management, integrated with a Pomodoro timer to boost productivity and focus, all within a modern and fully responsive interface.
 
@@ -50,20 +49,6 @@ This project is a single-file application and requires no complex installation s
     ```
 2.  **Open `index.html`:**
     * Navigate to the project folder and open the `index.html` file in any modern web browser.
-
----
-
-### ⚙️ **Configuration (Important)**
-
-To enable the advanced features (quote generation and task breakdown), you must add your own **API Key** from **Google Gemini**.
-
-1.  **Get a free API key** from [Google AI Studio](https://aistudio.google.com/app/apikey).
-2.  Open the `index.html` file and search for the `callGemini` function.
-3.  Replace the placeholder text with your key:
-    ```javascript
-    const apiKey = "YOUR_API_KEY"; // Replace this with your key
-    ```
-4.  **(Optional but highly recommended)** Restrict your API key to work only on your website's URL through the [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
 
 ---
 
