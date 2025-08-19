@@ -20,6 +20,7 @@
         const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
         const pomodoroSettingsModal = new bootstrap.Modal(document.getElementById('pomodoroSettingsModal'));
         const taskStartAlertModal = new bootstrap.Modal(document.getElementById('taskStartAlertModal'));
+        const taskTitleInput = document.getElementById('task-title');
 
         const pomodoroDisplay = document.getElementById('pomodoro-timer');
         const pomodoroStartPauseBtn = document.getElementById('pomodoro-start-pause');
@@ -179,6 +180,14 @@
             if (task.status === 'in-progress') return `<button class="btn btn-sm btn-warning" onclick="stopCountdown('${task.id}')"><i class="fas fa-pause"></i> إيقاف مؤقت</button>`;
             return `<span class="text-success fw-bold"><i class="fas fa-check"></i> مكتملة</span>`;
         }
+        
+        function cancelEdit() {
+            taskForm.reset();
+            document.getElementById('task-id').value = '';
+            document.getElementById('form-button-text').textContent = 'إضافة المهمة';
+            document.getElementById('cancel-edit-btn').style.display = 'none';
+            document.getElementById('gemini-breakdown-btn').style.display = 'none';
+        }
 
         function handleFormSubmit(e) {
             e.preventDefault();
@@ -189,7 +198,7 @@
                 return;
             }
             const taskData = {
-                title: document.getElementById('task-title').value.trim(),
+                title: taskTitleInput.value.trim(),
                 description: document.getElementById('task-desc').value.trim(),
                 priority: document.querySelector('input[name="priority"]:checked').value,
                 startDate: document.getElementById('task-start').value,
@@ -218,24 +227,23 @@
             }
             saveTasks();
             renderTasks();
-            taskForm.reset();
-            document.getElementById('task-id').value = '';
-            document.getElementById('form-button-text').textContent = 'إضافة المهمة';
-            document.getElementById('gemini-breakdown-btn').style.display = 'none';
+            cancelEdit();
         }
 
         window.handleEdit = function(id) {
             const task = tasks.find(t => t.id === id);
             if (!task) return;
             document.getElementById('task-id').value = task.id;
-            document.getElementById('task-title').value = task.title;
+            taskTitleInput.value = task.title;
             document.getElementById('task-desc').value = task.description;
             document.getElementById(`priority-${task.priority}`).checked = true;
             document.getElementById('task-start').value = task.startDate;
             document.getElementById('task-end').value = task.endDate;
             document.getElementById('task-reminder').value = task.reminder;
             document.getElementById('form-button-text').textContent = 'تحديث المهمة';
+            document.getElementById('cancel-edit-btn').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
+            taskTitleInput.focus();
         }
         window.handleDelete = function(id) {
             taskToDeleteId = id;
@@ -520,6 +528,7 @@
             pomodoroResetBtn.addEventListener('click', resetPomodoro);
             Object.keys(pomodoroModeBtns).forEach(mode => pomodoroModeBtns[mode].addEventListener('click', () => switchPomodoroMode(mode)));
             document.getElementById('savePomodoroSettingsBtn').addEventListener('click', savePomodoroSettings);
+            document.getElementById('cancel-edit-btn').addEventListener('click', cancelEdit);
         }
 
         initializeApp();
