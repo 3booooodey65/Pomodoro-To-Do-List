@@ -41,14 +41,7 @@ A comprehensive web application for effective daily task management, integrated 
 
 ### 🔧 **How to Use**
 
-This project is a single-file application and requires no complex installation steps.
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/your-username/your-repository-name.git](https://github.com/your-username/your-repository-name.git)
-    ```
-2.  **Open `index.html`:**
-    * Navigate to the project folder and open the `index.html` file in any modern web browser.
+https://3booooodey65.github.io/Pomodoro-To-Do-List/
 
 ---
 
