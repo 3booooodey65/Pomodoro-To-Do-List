@@ -2,18 +2,15 @@
             font-family: 'Cairo', sans-serif;
             transition: background-color 0.3s ease;
         }
-
         :root {
             --custom-primary: #0d6efd;
             --custom-secondary: #6c757d;
         }
-
         .btn-primary, .btn-primary:hover, .btn-primary:active, .btn-primary:focus {
             background-color: var(--custom-primary);
             border-color: var(--custom-primary);
         }
         .btn-primary:hover { filter: brightness(90%); }
-
         .btn-outline-primary {
             color: var(--custom-primary);
             border-color: var(--custom-primary);
@@ -26,49 +23,39 @@
         .text-primary { color: var(--custom-primary) !important; }
         .bg-primary { background-color: var(--custom-primary) !important; }
         .border-primary { border-color: var(--custom-primary) !important; }
-
         .navbar { box-shadow: 0 2px 4px rgba(0,0,0,.1); }
-
         .quote-section, .pomodoro-section {
             padding: 2rem 1rem;
             background-color: rgba(var(--bs-tertiary-bg-rgb), 1);
             border-radius: .5rem;
         }
-
         .task-card {
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
         }
-
         .task-card.status-completed { opacity: 0.65; }
         .task-card.status-completed .task-title { text-decoration: line-through; }
         .task-card.status-in-progress { border-left: 5px solid var(--custom-primary); }
         .task-card.status-pending { border-left: 5px solid var(--custom-secondary); }
-
         .priority-high { border-top: 5px solid #dc3545; }
         .priority-medium { border-top: 5px solid #fd7e14; }
         .priority-low { border-top: 5px solid #198754; }
-
         .countdown-timer {
             font-weight: bold;
             font-size: 1.1rem;
             color: var(--custom-primary);
         }
-
         .form-control:focus, .form-select:focus {
             box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
             border-color: var(--custom-primary);
         }
-
         .btn .spinner-border { display: none; }
         .btn.disabled .spinner-border, .btn:disabled .spinner-border { display: inline-block; }
-
         #pomodoro-timer {
             font-size: 3.5rem;
             color: var(--custom-primary);
         }
-
         .priority-selector .btn-check:checked+.btn {
             transform: scale(1.1);
             box-shadow: 0 0 0 3px var(--bs-body-bg), 0 0 0 5px var(--custom-primary);
