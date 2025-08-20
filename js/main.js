@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
         let tasks = [];
         let activeTimers = {};
         let currentFilter = 'all';
@@ -10,6 +10,7 @@
         let pomodoroMode = 'pomodoro';
         let pomodoroSettings = { pomodoro: 25, short: 5, long: 15 };
         let pomodoroTimeLeft = pomodoroSettings.pomodoro * 60;
+        let pomodoroEndTime = 0;
         let pomodoroInterval = null;
 
         const taskForm = document.getElementById('task-form');
@@ -47,7 +48,6 @@
             if (audioStarted) return;
             await Tone.start();
             audioStarted = true;
-            console.log("Audio context started.");
         }
 
         function playSound(type) {
@@ -118,7 +118,7 @@
         function loadTasks() {
             tasks = JSON.parse(localStorage.getItem('tasks')) || [];
             tasks.forEach(task => {
-                if (task.status === 'in-progress' && task.remainingTime > 0) {
+                if (task.status === 'in-progress' && task.countdownEndTime) {
                     startCountdown(task.id);
                 }
             });
@@ -218,6 +218,7 @@
                     status: 'pending',
                     createdAt: new Date().toISOString(),
                     remainingTime: (new Date(taskData.endDate) - new Date(taskData.startDate)) / 1000,
+                    countdownEndTime: null,
                 };
                 tasks.push(newTask);
                 playSound('add');
@@ -261,87 +262,118 @@
         }
 
         function formatTime(seconds) {
+            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const s = (seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+        
+        function formatLongTime(seconds) {
+            if (seconds < 0) seconds = 0;
             const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
             const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
             const s = Math.floor(seconds % 60).toString().padStart(2, '0');
             return `${h}:${m}:${s}`;
         }
-        window.startCountdown = function(id) {
-            const taskIndex = tasks.findIndex(t => t.id === id);
-            if (taskIndex === -1 || tasks[taskIndex].status === 'completed' || activeTimers[id]) return;
-            tasks[taskIndex].status = 'in-progress';
-            saveTasks();
-            renderTasks();
+
+        function startTaskTimerLoop(id, endTime) {
             const timerElement = document.getElementById(`timer-${id}`);
             if (!timerElement) return;
+
             activeTimers[id] = setInterval(() => {
-                const currentTask = tasks[taskIndex];
-                if (currentTask.remainingTime > 0) {
-                    currentTask.remainingTime--;
-                    timerElement.textContent = formatTime(currentTask.remainingTime);
-                    if (currentTask.remainingTime % 5 === 0) saveTasks();
+                const remainingSeconds = Math.round((endTime - Date.now()) / 1000);
+                if (remainingSeconds > 0) {
+                    timerElement.textContent = formatLongTime(remainingSeconds);
                 } else {
                     timerElement.textContent = "انتهى الوقت!";
                     markAsComplete(id);
-                    showToast("انتهى الوقت", `انتهى وقت المهمة: "${currentTask.title}"`, "warning");
+                    showToast("انتهى الوقت", `انتهى وقت المهمة.`, "warning");
                 }
             }, 1000);
         }
+        
+        window.startCountdown = function(id) {
+            const taskIndex = tasks.findIndex(t => t.id === id);
+            if (taskIndex === -1 || tasks[taskIndex].status === 'completed' || activeTimers[id]) return;
+            
+            const task = tasks[taskIndex];
+            task.status = 'in-progress';
+            task.countdownEndTime = Date.now() + (task.remainingTime * 1000);
+            
+            saveTasks();
+            renderTasks();
+            startTaskTimerLoop(id, task.countdownEndTime);
+        }
+
         window.stopCountdown = function(id, changeStatus = true) {
             if (activeTimers[id]) {
                 clearInterval(activeTimers[id]);
                 delete activeTimers[id];
             }
-            if (changeStatus) {
-                const taskIndex = tasks.findIndex(t => t.id === id);
-                if (taskIndex > -1) {
-                    tasks[taskIndex].status = 'pending';
-                    saveTasks();
-                    renderTasks();
+            const taskIndex = tasks.findIndex(t => t.id === id);
+            if (taskIndex > -1) {
+                const task = tasks[taskIndex];
+                if (task.countdownEndTime) {
+                    task.remainingTime = Math.round((task.countdownEndTime - Date.now()) / 1000);
+                    if (task.remainingTime < 0) task.remainingTime = 0;
                 }
+                task.countdownEndTime = null;
+                if (changeStatus) {
+                    task.status = 'pending';
+                }
+                saveTasks();
+                renderTasks();
             }
         }
 
         function updatePomodoroDisplay() {
-            const minutes = Math.floor(pomodoroTimeLeft / 60).toString().padStart(2, '0');
-            const seconds = (pomodoroTimeLeft % 60).toString().padStart(2, '0');
-            pomodoroDisplay.textContent = `${minutes}:${seconds}`;
-            document.title = pomodoroState === 'running' ? `${minutes}:${seconds} - قائمة المهام` : 'قائمة المهام الذكية';
+            const remainingSeconds = pomodoroState === 'running' ? Math.round((pomodoroEndTime - Date.now()) / 1000) : pomodoroTimeLeft;
+            const displaySeconds = remainingSeconds > 0 ? remainingSeconds : 0;
+            pomodoroDisplay.textContent = formatTime(displaySeconds);
+            document.title = pomodoroState === 'running' ? `${formatTime(displaySeconds)} - قائمة المهام` : 'قائمة المهام';
         }
+
         function handlePomodoroStartPause() {
             startAudio();
             const icon = pomodoroStartPauseBtn.querySelector('i');
             const text = pomodoroStartPauseBtn.querySelector('span');
+
             if (pomodoroState === 'stopped' || pomodoroState === 'paused') {
+                pomodoroEndTime = Date.now() + pomodoroTimeLeft * 1000;
                 pomodoroState = 'running';
                 icon.className = 'fas fa-pause';
                 text.textContent = 'إيقاف';
                 pomodoroInterval = setInterval(() => {
-                    pomodoroTimeLeft--;
-                    updatePomodoroDisplay();
-                    if (pomodoroTimeLeft <= 0) {
+                    const remaining = Math.round((pomodoroEndTime - Date.now()) / 1000);
+                    if (remaining <= 0) {
                         clearInterval(pomodoroInterval);
                         playSound('pomodoroEnd');
                         const modeTextMap = { pomodoro: 'التركيز', short: 'الراحة القصيرة', long: 'الراحة الطويلة' };
                         showToast("انتهى الوقت!", `انتهت جلسة ${modeTextMap[pomodoroMode]}.`, "success");
                         switchPomodoroMode(pomodoroMode === 'pomodoro' ? 'short' : 'pomodoro');
+                    } else {
+                        updatePomodoroDisplay();
                     }
                 }, 1000);
             } else if (pomodoroState === 'running') {
+                clearInterval(pomodoroInterval);
+                pomodoroTimeLeft = Math.round((pomodoroEndTime - Date.now()) / 1000);
                 pomodoroState = 'paused';
                 icon.className = 'fas fa-play';
                 text.textContent = 'متابعة';
-                clearInterval(pomodoroInterval);
             }
+            updatePomodoroDisplay();
         }
+
         function resetPomodoro() {
             clearInterval(pomodoroInterval);
             pomodoroState = 'stopped';
             pomodoroTimeLeft = pomodoroSettings[pomodoroMode] * 60;
+            pomodoroEndTime = 0;
             updatePomodoroDisplay();
             pomodoroStartPauseBtn.querySelector('i').className = 'fas fa-play';
             pomodoroStartPauseBtn.querySelector('span').textContent = 'بدء';
         }
+
         function switchPomodoroMode(newMode) {
             pomodoroMode = newMode;
             Object.values(pomodoroModeBtns).forEach(btn => btn.classList.remove('active'));
@@ -419,11 +451,11 @@
                 const result = await response.json();
                 return result.candidates?.[0]?.content?.parts?.[0]?.text;
             } catch (error) {
-                console.error("Error calling Gemini API:", error);
+                console.error("Error calling API:", error);
                 if (error.message.includes("403")) {
-                    showToast("خطأ 403: الوصول مرفوض", "المفتاح غير مصرح له بالعمل من هذا الموقع. يرجى مراجعة قيود الموقع (Website restrictions) في Google Cloud Console.", "danger");
+                    showToast("خطأ 403: الوصول مرفوض", "المفتاح غير مصرح له بالعمل من هذا الموقع. يرجى مراجعة قيود الموقع.", "danger");
                 } else {
-                    showToast("خطأ في الاتصال", "لا يمكن الوصول إلى خدمة الذكاء الاصطناعي حاليًا. تأكد من صحة مفتاح API والاتصال بالإنترنت.", "danger");
+                    showToast("خطأ في الاتصال", "لا يمكن الوصول إلى الخدمة حاليًا. تأكد من صحة مفتاح API والاتصال بالإنترنت.", "danger");
                 }
                 return null;
             } finally {
@@ -491,7 +523,7 @@
                     breakdownBtn.style.display = 'none';
                     showToast("✨ نجاح", `تمت إضافة ${subTasks.length} مهمة فرعية.`, "success");
                 } else {
-                    showToast("لم يتم التعرف على مهام", "لم يتمكن الذكاء الاصطناعي من تقسيم هذه المهمة.", "info");
+                    showToast("لم يتم التعرف على مهام", "لم نتمكن من تقسيم هذه المهمة.", "info");
                 }
             }
         }
