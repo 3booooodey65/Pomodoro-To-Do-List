@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const pomodoroSettingsModal = new bootstrap.Modal(document.getElementById('pomodoroSettingsModal'));
         const taskStartAlertModal = new bootstrap.Modal(document.getElementById('taskStartAlertModal'));
         const taskTitleInput = document.getElementById('task-title');
+        const navBar = document.querySelector('.navbar');
 
         const pomodoroDisplay = document.getElementById('pomodoro-timer');
         const pomodoroStartPauseBtn = document.getElementById('pomodoro-start-pause');
@@ -403,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         function scheduleStartAlert(task) {
-            const delay = new Date(task.startDate).getTime() - Date.now() - (1 * 60 * 1000); // 1 minute before
+            const delay = new Date(task.startDate).getTime() - Date.now() - (1 * 60 * 1000);
             if (delay > 0) {
                 setTimeout(() => {
                     const currentTask = tasks.find(t => t.id === task.id);
@@ -426,6 +427,24 @@ document.addEventListener('DOMContentLoaded', () => {
             const bgClass = { success: 'bg-success', danger: 'bg-danger', warning: 'bg-warning', info: 'bg-info' }[type];
             if (bgClass) toastHeader.classList.add(bgClass, 'text-white');
             appToast.show();
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        function handleFullScreenChange() {
+            if (!document.fullscreenElement) {
+                navBar.classList.remove('hidden');
+            } else {
+                navBar.classList.add('hidden');
+            }
         }
 
         async function callGemini(prompt, buttonElement) {
@@ -467,8 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const quoteBtn = document.getElementById('gemini-quote-btn');
             const prompt = "اكتب اقتباسًا أو حكمة قصيرة من أقوال علماء الإسلام الكبار مثل: ابن القيم، ابن تيمية، الإمام مالك، الإمام أحمد بن حنبل، الإمام الشافعي، الإمام أبو حنيفة، النووي، أبو إسحاق الحويني، مصطفى العدوي، محمد حسان، عبد السلام الشويعر، وليد السعيدان، صالح الفوزان، سمير مصطفى، علي طنطاوي، أو غيرهم من العلماء الموثوقين. يجب أن يكون الاقتباس عن العمل، أو إدارة الوقت، أو السعي، أو الأخلاق. أرجع الاقتباس واسم القائل مفصولين بـ ' - '. مثال: 'الوقت سيف، إن لم تقطعه قطعك - الإمام الشافعي'. لا تضف أي نص آخر.";
             if (document.getElementById('quote-text').textContent === 'يتم الآن تحميل حكمة ملهمة...') {
-                 document.getElementById('quote-text').textContent = 'جاري توليد حكمة...';
-                 document.getElementById('quote-author').textContent = '...';
+                document.getElementById('quote-text').textContent = 'جاري توليد حكمة...';
+                document.getElementById('quote-author').textContent = '...';
             }
             const resultText = await callGemini(prompt, quoteBtn);
             if (resultText) {
@@ -561,6 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
             Object.keys(pomodoroModeBtns).forEach(mode => pomodoroModeBtns[mode].addEventListener('click', () => switchPomodoroMode(mode)));
             document.getElementById('savePomodoroSettingsBtn').addEventListener('click', savePomodoroSettings);
             document.getElementById('cancel-edit-btn').addEventListener('click', cancelEdit);
+            document.addEventListener('dblclick', toggleFullScreen);
+            document.addEventListener('fullscreenchange', handleFullScreenChange);
         }
 
         initializeApp();
