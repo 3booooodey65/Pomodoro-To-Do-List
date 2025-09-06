@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isOverdue = new Date() > new Date(task.endDate) && task.status !== 'completed';
             let timerHTML = task.status === 'in-progress' ? `<span class="countdown-timer ms-2" id="timer-${task.id}">--:--:--</span>` : '';
             card.innerHTML = `
-                <div class="card-body">
+                <div class="card-body" dir="rtl">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h5 class="card-title task-title mb-1">${task.title}</h5>
