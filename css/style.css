@@ -23,7 +23,13 @@
         .text-primary { color: var(--custom-primary) !important; }
         .bg-primary { background-color: var(--custom-primary) !important; }
         .border-primary { border-color: var(--custom-primary) !important; }
-        .navbar { box-shadow: 0 2px 4px rgba(0,0,0,.1); }
+        .navbar { 
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+            transition: transform 0.3s ease-in-out;
+        }
+        .navbar.hidden {
+            transform: translateY(-100%);
+        }
         .quote-section, .pomodoro-section {
             padding: 2rem 1rem;
             background-color: rgba(var(--bs-tertiary-bg-rgb), 1);
