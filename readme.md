@@ -39,10 +39,10 @@ A comprehensive web application for effective daily task management, integrated 
 
 ---
 
-### 🔧 **How to Use**
+### 🔧 **Project Link**
 
 https://3booooodey65.github.io/Pomodoro-To-Do-List/
 
 ---
 
-We hope this application helps you organize your time and boost your productivity!
+I hope this application helps you organize your time and boost your productivity!
