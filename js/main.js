@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isOverdue = new Date() > new Date(task.endDate) && task.status !== 'completed';
             let timerHTML = task.status === 'in-progress' ? `<span class="countdown-timer ms-2" id="timer-${task.id}">--:--:--</span>` : '';
             card.innerHTML = `
-                <div class="card-body" dir="rtl">
+                <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h5 class="card-title task-title mb-1">${task.title}</h5>
@@ -262,12 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-            const s = (seconds % 60).toString().padStart(2, '0');
-            return `${m}:${s}`;
-        }
-        
         function formatLongTime(seconds) {
             if (seconds < 0) seconds = 0;
             const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -279,7 +273,6 @@ document.addEventListener('DOMContentLoaded', () => {
         function startTaskTimerLoop(id, endTime) {
             const timerElement = document.getElementById(`timer-${id}`);
             if (!timerElement) return;
-
             activeTimers[id] = setInterval(() => {
                 const remainingSeconds = Math.round((endTime - Date.now()) / 1000);
                 if (remainingSeconds > 0) {
@@ -295,11 +288,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window.startCountdown = function(id) {
             const taskIndex = tasks.findIndex(t => t.id === id);
             if (taskIndex === -1 || tasks[taskIndex].status === 'completed' || activeTimers[id]) return;
-            
             const task = tasks[taskIndex];
             task.status = 'in-progress';
             task.countdownEndTime = Date.now() + (task.remainingTime * 1000);
-            
             saveTasks();
             renderTasks();
             startTaskTimerLoop(id, task.countdownEndTime);
@@ -318,9 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (task.remainingTime < 0) task.remainingTime = 0;
                 }
                 task.countdownEndTime = null;
-                if (changeStatus) {
-                    task.status = 'pending';
-                }
+                if (changeStatus) task.status = 'pending';
                 saveTasks();
                 renderTasks();
             }
@@ -329,15 +318,16 @@ document.addEventListener('DOMContentLoaded', () => {
         function updatePomodoroDisplay() {
             const remainingSeconds = pomodoroState === 'running' ? Math.round((pomodoroEndTime - Date.now()) / 1000) : pomodoroTimeLeft;
             const displaySeconds = remainingSeconds > 0 ? remainingSeconds : 0;
-            pomodoroDisplay.textContent = formatTime(displaySeconds);
-            document.title = pomodoroState === 'running' ? `${formatTime(displaySeconds)} - قائمة المهام` : 'قائمة المهام';
+            const m = Math.floor(displaySeconds / 60).toString().padStart(2, '0');
+            const s = (displaySeconds % 60).toString().padStart(2, '0');
+            pomodoroDisplay.textContent = `${m}:${s}`;
+            document.title = pomodoroState === 'running' ? `${m}:${s} - قائمة المهام` : 'قائمة المهام';
         }
 
         function handlePomodoroStartPause() {
             startAudio();
             const icon = pomodoroStartPauseBtn.querySelector('i');
             const text = pomodoroStartPauseBtn.querySelector('span');
-
             if (pomodoroState === 'stopped' || pomodoroState === 'paused') {
                 pomodoroEndTime = Date.now() + pomodoroTimeLeft * 1000;
                 pomodoroState = 'running';
@@ -348,8 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (remaining <= 0) {
                         clearInterval(pomodoroInterval);
                         playSound('pomodoroEnd');
-                        const modeTextMap = { pomodoro: 'التركيز', short: 'الراحة القصيرة', long: 'الراحة الطويلة' };
-                        showToast("انتهى الوقت!", `انتهت جلسة ${modeTextMap[pomodoroMode]}.`, "success");
+                        showToast("انتهى الوقت!", `انتهت جلسة بومودورو.`, "success");
                         switchPomodoroMode(pomodoroMode === 'pomodoro' ? 'short' : 'pomodoro');
                     } else {
                         updatePomodoroDisplay();
@@ -383,34 +372,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function requestNotificationPermission() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
+            if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
         }
+
         function scheduleNotification(task) {
             if (!task.reminder || !('Notification' in window) || Notification.permission !== 'granted') return;
             const delay = new Date(task.endDate).getTime() - (task.reminder * 60 * 1000) - Date.now();
             if (delay > 0) {
                 setTimeout(() => {
-                    const currentTask = tasks.find(t => t.id === task.id);
-                    if (currentTask && currentTask.status !== 'completed') {
+                    if (tasks.find(t => t.id === task.id && t.status !== 'completed')) {
                         playSound('reminder');
-                        new Notification('تذكير بمهمة قادمة', {
-                            body: `مهمة "${task.title}" على وشك الانتهاء خلال ${task.reminder} دقيقة.`
-                        });
+                        new Notification('تذكير بمهمة قادمة', { body: `مهمة "${task.title}" تنتهي خلال ${task.reminder} دقيقة.` });
                     }
                 }, delay);
             }
         }
         
         function scheduleStartAlert(task) {
-            const delay = new Date(task.startDate).getTime() - Date.now() - (1 * 60 * 1000);
+            const delay = new Date(task.startDate).getTime() - Date.now() - 60000;
             if (delay > 0) {
                 setTimeout(() => {
-                    const currentTask = tasks.find(t => t.id === task.id);
-                    if (currentTask && currentTask.status === 'pending') {
+                    if (tasks.find(t => t.id === task.id && t.status === 'pending')) {
                         playSound('startAlert');
-                        document.getElementById('taskStartAlertName').textContent = currentTask.title;
+                        document.getElementById('taskStartAlertName').textContent = task.title;
                         taskStartAlertModal.show();
                     }
                 }, delay);
@@ -418,64 +402,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         function showToast(title, body, type = 'info') {
-            const toastTitle = document.getElementById('toast-title');
-            const toastBody = document.getElementById('toast-body');
-            const toastHeader = document.querySelector('#app-toast .toast-header');
-            toastTitle.textContent = title;
-            toastBody.textContent = body;
-            toastHeader.className = 'toast-header';
-            const bgClass = { success: 'bg-success', danger: 'bg-danger', warning: 'bg-warning', info: 'bg-info' }[type];
-            if (bgClass) toastHeader.classList.add(bgClass, 'text-white');
+            document.getElementById('toast-title').textContent = title;
+            document.getElementById('toast-body').textContent = body;
+            const header = document.querySelector('#app-toast .toast-header');
+            header.className = 'toast-header ' + ({ success: 'bg-success', danger: 'bg-danger', warning: 'bg-warning', info: 'bg-info' }[type]) + ' text-white';
             appToast.show();
-        }
-
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
-        }
-
-        function handleFullScreenChange() {
-            if (!document.fullscreenElement) {
-                navBar.classList.remove('hidden');
-            } else {
-                navBar.classList.add('hidden');
-            }
         }
 
         async function callGemini(prompt, buttonElement) {
             if (buttonElement) buttonElement.disabled = true;
-            
             const apiKey = "AIzaSyAwR2RKbZmG4q0ZJB3vqtossMFc4UE2mQ0"; 
-            
-            if (apiKey === "" || apiKey === "YOUR_API_KEY") {
-                showToast("خطأ في الإعداد", "الرجاء إدخال مفتاح API الخاص بك في الكود.", "danger");
-                if (buttonElement) buttonElement.disabled = false;
-                return null;
-            }
-
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-            const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] };
             try {
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
-                if (!response.ok) throw new Error(`API request failed with status: ${response.status}`);
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
                 const result = await response.json();
                 return result.candidates?.[0]?.content?.parts?.[0]?.text;
             } catch (error) {
-                console.error("Error calling API:", error);
-                if (error.message.includes("403")) {
-                    showToast("خطأ 403: الوصول مرفوض", "المفتاح غير مصرح له بالعمل من هذا الموقع. يرجى مراجعة قيود الموقع.", "danger");
-                } else {
-                    showToast("خطأ في الاتصال", "لا يمكن الوصول إلى الخدمة حاليًا. تأكد من صحة مفتاح API والاتصال بالإنترنت.", "danger");
-                }
+                showToast("تنبيه", "حدث خطأ أثناء محاولة الاتصال بالخادم.", "danger");
                 return null;
             } finally {
                 if (buttonElement) buttonElement.disabled = false;
@@ -484,66 +432,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function fetchAIQuote() {
             const quoteBtn = document.getElementById('gemini-quote-btn');
-            const prompt = "اكتب اقتباسًا أو حكمة قصيرة من أقوال علماء الإسلام الكبار مثل: ابن القيم، ابن تيمية، الإمام مالك، الإمام أحمد بن حنبل، الإمام الشافعي، الإمام أبو حنيفة، النووي، أبو إسحاق الحويني، مصطفى العدوي، محمد حسان، عبد السلام الشويعر، وليد السعيدان، صالح الفوزان، سمير مصطفى، علي طنطاوي، أو غيرهم من العلماء الموثوقين. يجب أن يكون الاقتباس عن العمل، أو إدارة الوقت، أو السعي، أو الأخلاق. أرجع الاقتباس واسم القائل مفصولين بـ ' - '. مثال: 'الوقت سيف، إن لم تقطعه قطعك - الإمام الشافعي'. لا تضف أي نص آخر.";
-            if (document.getElementById('quote-text').textContent === 'يتم الآن تحميل حكمة ملهمة...') {
-                document.getElementById('quote-text').textContent = 'جاري توليد حكمة...';
-                document.getElementById('quote-author').textContent = '...';
-            }
+            const prompt = "اكتب اقتباسًا أو حكمة قصيرة من أقوال علماء الإسلام الكبار مثل: ابن القيم، ابن تيمية، الأئمة الأربعة، النووي، الحويني، مصطفى العدوي، محمد حسان، الشويعر، السعيدان، الفوزان، سمير مصطفى، أو علي طنطاوي عن العمل أو الوقت. أرجع الاقتباس والاسم فقط مفصولين بـ ' - '.";
             const resultText = await callGemini(prompt, quoteBtn);
             if (resultText) {
                 const parts = resultText.trim().split(' - ');
-                let quote = resultText.trim();
-                let author = "من حكم السلف الصالح";
-                if (parts.length >= 2) {
-                    quote = parts.slice(0, -1).join(' - ').trim();
-                    author = parts[parts.length - 1].trim();
-                }
-                if (quote.startsWith('"') && quote.endsWith('"')) {
-                    quote = quote.substring(1, quote.length - 1);
-                }
-                document.getElementById('quote-text').textContent = quote;
-                document.getElementById('quote-author').textContent = author;
+                document.getElementById('quote-text').textContent = parts[0].replace(/"/g, '');
+                document.getElementById('quote-author').textContent = parts[1] || "من حكم السلف";
             }
         }
 
         async function handleTaskBreakdown() {
-            const titleInput = document.getElementById('task-title');
-            const taskTitle = titleInput.value.trim();
-            if (taskTitle.length < 10) {
-                showToast("خطأ", "يرجى كتابة عنوان مهمة وصفي أكثر.", "warning");
-                return;
-            }
-            const breakdownBtn = document.getElementById('gemini-breakdown-btn');
-            const prompt = `قسّم المهمة التالية إلى قائمة من المهام الفرعية البسيطة والقابلة للتنفيذ. أرجع قائمة فقط، كل مهمة في سطر جديد، بدون ترقيم أو علامات خاصة. المهمة هي: "${taskTitle}"`;
-            const result = await callGemini(prompt, breakdownBtn);
+            const taskTitle = taskTitleInput.value.trim();
+            if (taskTitle.length < 10) return showToast("تنبيه", "يرجى كتابة عنوان وصفى أطول.", "warning");
+            const btn = document.getElementById('gemini-breakdown-btn');
+            const result = await callGemini(`قسّم المهمة التالية إلى مهام فرعية بسيطة. أرجع قائمة فقط، كل مهمة في سطر، بدون ترقيم: "${taskTitle}"`, btn);
             if (result) {
-                const subTasks = result.trim().split('\n').filter(line => line.trim() !== '');
-                if (subTasks.length > 0) {
-                    const now = new Date();
-                    const defaultStartDate = document.getElementById('task-start').value || now.toISOString().slice(0, 16);
-                    const defaultEndDate = document.getElementById('task-end').value || new Date(now.getTime() + 60 * 60 * 1000).toISOString().slice(0, 16);
-                    subTasks.forEach(subTaskTitle => {
-                        tasks.push({
-                            title: subTaskTitle,
-                            description: `مهمة فرعية من: "${taskTitle}"`,
-                            priority: document.querySelector('input[name="priority"]:checked').value,
-                            startDate: defaultStartDate,
-                            endDate: defaultEndDate,
-                            reminder: null,
-                            id: 'task-' + Date.now() + Math.random(),
-                            status: 'pending',
-                            createdAt: new Date().toISOString(),
-                            remainingTime: (new Date(defaultEndDate) - new Date(defaultStartDate)) / 1000,
-                        });
-                    });
-                    saveTasks();
-                    renderTasks();
-                    titleInput.value = '';
-                    breakdownBtn.style.display = 'none';
-                    showToast("✨ نجاح", `تمت إضافة ${subTasks.length} مهمة فرعية.`, "success");
-                } else {
-                    showToast("لم يتم التعرف على مهام", "لم نتمكن من تقسيم هذه المهمة.", "info");
-                }
+                const subTasks = result.trim().split('\n').filter(l => l.trim());
+                subTasks.forEach(st => tasks.push({
+                    title: st, description: `فرعية من: ${taskTitle}`, priority: document.querySelector('input[name="priority"]:checked').value,
+                    startDate: document.getElementById('task-start').value || new Date().toISOString().slice(0,16),
+                    endDate: document.getElementById('task-end').value || new Date(Date.now()+3600000).toISOString().slice(0,16),
+                    id: 'task-'+Date.now()+Math.random(), status: 'pending', createdAt: new Date().toISOString(), remainingTime: 3600, countdownEndTime: null
+                }));
+                saveTasks(); renderTasks(); taskTitleInput.value = ''; btn.style.display = 'none';
+                showToast("نجاح", `تمت إضافة ${subTasks.length} مهمة فرعية.`, "success");
             }
         }
 
@@ -551,38 +463,19 @@ document.addEventListener('DOMContentLoaded', () => {
             taskForm.addEventListener('submit', handleFormSubmit);
             primaryColorPicker.addEventListener('input', (e) => applyColors(e.target.value, secondaryColorPicker.value));
             secondaryColorPicker.addEventListener('input', (e) => applyColors(primaryColorPicker.value, e.target.value));
-            document.querySelectorAll('input[name="filter"]').forEach(radio => radio.addEventListener('change', (e) => {
-                currentFilter = e.target.id.replace('filter-', '');
-                renderTasks();
-            }));
-            document.getElementById('sort-tasks').addEventListener('change', (e) => {
-                currentSort = e.target.value;
-                renderTasks();
-            });
+            document.querySelectorAll('input[name="filter"]').forEach(r => r.addEventListener('change', (e) => { currentFilter = e.target.id.replace('filter-', ''); renderTasks(); }));
+            document.getElementById('sort-tasks').addEventListener('change', (e) => { currentSort = e.target.value; renderTasks(); });
             document.getElementById('gemini-quote-btn').addEventListener('click', fetchAIQuote);
             document.getElementById('gemini-breakdown-btn').addEventListener('click', handleTaskBreakdown);
-            document.getElementById('task-title').addEventListener('input', (e) => {
-                document.getElementById('gemini-breakdown-btn').style.display = e.target.value.trim().length >= 10 ? 'block' : 'none';
-            });
-            document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-                if (taskToDeleteId) {
-                    tasks = tasks.filter(t => t.id !== taskToDeleteId);
-                    stopCountdown(taskToDeleteId, false);
-                    saveTasks();
-                    renderTasks();
-                    showToast("تم الحذف", "تم حذف المهمة.", "info");
-                    taskToDeleteId = null;
-                    deleteModal.hide();
-                }
-            });
+            taskTitleInput.addEventListener('input', (e) => document.getElementById('gemini-breakdown-btn').style.display = e.target.value.trim().length >= 10 ? 'block' : 'none');
+            document.getElementById('confirmDeleteBtn').addEventListener('click', () => { if (taskToDeleteId) { tasks = tasks.filter(t => t.id !== taskToDeleteId); stopCountdown(taskToDeleteId, false); saveTasks(); renderTasks(); showToast("تم", "تم الحذف.", "info"); deleteModal.hide(); } });
             pomodoroStartPauseBtn.addEventListener('click', handlePomodoroStartPause);
             pomodoroResetBtn.addEventListener('click', resetPomodoro);
-            Object.keys(pomodoroModeBtns).forEach(mode => pomodoroModeBtns[mode].addEventListener('click', () => switchPomodoroMode(mode)));
+            Object.keys(pomodoroModeBtns).forEach(m => pomodoroModeBtns[m].addEventListener('click', () => switchPomodoroMode(m)));
             document.getElementById('savePomodoroSettingsBtn').addEventListener('click', savePomodoroSettings);
             document.getElementById('cancel-edit-btn').addEventListener('click', cancelEdit);
-            document.addEventListener('dblclick', toggleFullScreen);
-            document.addEventListener('fullscreenchange', handleFullScreenChange);
+            document.addEventListener('dblclick', () => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); });
+            document.addEventListener('fullscreenchange', () => navBar.classList.toggle('hidden', !!document.fullscreenElement));
         }
-
         initializeApp();
     });
